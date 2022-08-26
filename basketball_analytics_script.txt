@@ -1,0 +1,86 @@
+#Complete in R
+
+read.csv(shots_data)
+filter(shots_data, y > 7.8 & ( sqrt(y^2 + x^2) >= 23.75)) - NC3
+filter(shots_data, y <=7.8 & (x >= 22 | x <= -22)) - Corner 3s
+filter(shots_data, !(y > 7.8 & ( sqrt(y^2 + x^2) >= 23.75)) & !(y <=7.8 & (x >= 22 | x <= -22))) - 2PT
+
+#Fg_Totals Table Creation Script: 
+fg_totals <- shots_data %>% group_by(team) %>% summarise( Shots_Missed = sum(fgmade == 0 ), Shots_Made = sum(fgmade == 1), Shots_Attempted = Shots_Made + Shots_Missed)
+
+#Team A shots taken: 280
+#Team B shots taken: 224
+
+
+
+C3 %>% tally(team == "Team A") / fg_totals$Shots_Attempted[1] * 100
+ #        n
+#1 6.428571 --- 6% of Team A's shots are Corner 3's
+
+NC3 %>% tally(team == "Team A") / fg_totals$Shots_Attempted[1] * 100
+#         n
+#1 24.28571 --- --- 24.3% of Team A's shots are Corner 3's
+
+twopt %>% tally(team == "Team A") / fg_totals$Shots_Attempted[1] * 100
+#         n
+#1 69.28571 --- 69.3% of Team A's shots are two point attempts
+
+C3 %>% tally(team == "Team B") / fg_totals$Shots_Attempted[2] * 100
+#         n
+#1 5.357143 --- 5.4% of Team B's shots are Corner 3's
+
+NC3 %>% tally(team == "Team B") / fg_totals$Shots_Attempted[2] * 100
+#         n
+#1 27.67857 ---- 27.7% of Team B's shots are Non-corner 3's
+
+twopt %>% tally(team == "Team B") / fg_totals$Shots_Attempted[2] * 100
+#         n
+#1 66.96429 ---- 66.9% of Team B's shots are two point attempts
+
+
+#2. EFG%
+
+#Starting with 2PT's, create new aggregation table:
+twopt_totals <- twopt %>% group_by(team) %>% summarise( Shots_Missed = sum(fgmade == 0 ), Shots_Made = sum(fgmade == 1), Shots_Attempted = Shots_Made + Shots_Missed)
+# A tibble: 2 × 4
+#  team   Shots_Missed Shots_Made Shots_Attempted
+#  <chr>         <int>      <int>           <int>
+#1 Team A           99         95             194
+#2 Team B           83         67             150
+
+
+TeamA_2PT_EFG <-  twopt_totals$Shots_Made[1] / twopt_totals$Shots_Attempted[1] * 100
+#[1] 48.96907
+
+TeamB_2PT_EFG <-  twopt_totals$Shots_Made[2] / twopt_totals$Shots_Attempted[2] * 100
+#[1] 44.66667
+
+#New aggregate tables: 
+c3_totals <- C3 %>% group_by(team) %>% summarise( Shots_Missed = sum(fgmade == 0 ), Shots_Made = sum(fgmade == 1), Shots_Attempted = Shots_Made + Shots_Missed)
+nc3_totals <- NC3 %>% group_by(team) %>% summarise( Shots_Missed = sum(fgmade == 0 ), Shots_Made = sum(fgmade == 1), Shots_Attempted = Shots_Made + Shots_Missed)
+
+TeamA_C3_EFG <- (c3_totals$Shots_Made[1] + (0.5 * c3_totals$Shots_Made[1])) / c3_totals$Shots_Attempted[1]
+#[1] 0.75
+
+TeamB_C3_EFG <- (c3_totals$Shots_Made[2] + (0.5 * c3_totals$Shots_Made[2])) / c3_totals$Shots_Attempted[2]
+#[1] 0.5
+
+
+TeamA_NC3_EFG <- (nc3_totals$Shots_Made[1] + (0.5 * nc3_totals$Shots_Made[1])) / nc3_totals$Shots_Attempted[1]
+#[1] 0.4632353
+
+> TeamB_NC3_EFG <- (nc3_totals$Shots_Made[2] + (0.5 * nc3_totals$Shots_Made[2])) / nc3_totals$Shots_Attempted[2]
+> TeamB_NC3_EFG
+[1] 0.5080645
+
+
+EFG_Totals <- tribble(
+     ~Team_Name, ~TwoPT_EFG,    ~C3_EFG,       ~NC3_EFG,
+     "Team A", TeamA_2PT_EFG,  TeamA_C3_EFG, TeamA_NC3_EFG,
+     "Team B", TeamB_2PT_EFG,  TeamB_C3_EFG, TeamB_NC3_EFG
+ )
+# A tibble: 2 × 4
+#  Team_Name TwoPT_EFG C3_EFG NC3_EFG
+#  <chr>         <dbl>  <dbl>   <dbl>
+#1 Team A        0.490   0.75   0.463
+#2 Team B        0.447   0.5    0.508
